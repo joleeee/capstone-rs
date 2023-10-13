@@ -69,6 +69,9 @@ impl Arm64OperandType {
             ARM64_OP_SYS => Sys(unsafe { value.sys }),
             ARM64_OP_PREFETCH => Prefetch(unsafe { value.prefetch }),
             ARM64_OP_BARRIER => Barrier(unsafe { value.barrier }),
+            // i have no idea what im doing
+            ARM64_OP_SVCR => Invalid,
+            ARM64_OP_SME_INDEX => Invalid,
         }
     }
 }
