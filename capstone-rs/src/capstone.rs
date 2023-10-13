@@ -365,6 +365,44 @@ impl Capstone {
         }
     }
 
+    /// Get the registers are which are read to and written to, in that order.
+    pub fn regs_access(&self, insn: &Insn) -> Option<CsResult<(Vec<RegId>, Vec<RegId>)>> {
+        if cfg!(feature = "full") {
+            Some(Ok(unsafe {
+                let mut regs_read_count: u8 = 0;
+                let mut regs_write_count: u8 = 0;
+
+                let mut regs_write = [0u16; 64];
+                let mut regs_read = [0u16; 64];
+
+                let err = cs_regs_access(
+                    self.csh(),
+                    &insn.insn as *const cs_insn,
+                    &mut regs_read as *mut _,
+                    &mut regs_read_count as *mut _,
+                    &mut regs_write as *mut _,
+                    &mut regs_write_count as *mut _,
+                );
+
+                if err != cs_err::CS_ERR_OK {
+                    return Some(Err(err.into()));
+                }
+
+                fn to_vec(ints: [u16; 64], len: usize) -> Vec<RegId> {
+                    assert!(len <= ints.len());
+                    ints[..len].iter().map(|v| RegId(*v)).collect()
+                }
+
+                (
+                    to_vec(regs_read, regs_read_count as usize),
+                    to_vec(regs_write, regs_write_count as usize),
+                )
+            }))
+        } else {
+            None
+        }
+    }
+
     /// Converts a group id `group_id` to a `String` containing the group name.
     /// Unavailable in Diet mode
     pub fn group_name(&self, group_id: InsnGroupId) -> Option<String> {
